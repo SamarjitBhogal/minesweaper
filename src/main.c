@@ -244,4 +244,5 @@ void FloodClearFrom(int i, int j) {
 void StartGame() {
     GridInit();
     state = PLAYING;
+    tilesRevealed = 0;
 }
