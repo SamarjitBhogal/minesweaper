@@ -1,8 +1,5 @@
-# TicTacToe
+# MineSweeper
 Game prototype using C library raylib.
-
-# Programmers
-Samarjit Bhogal (@SamarjitBhogal)
 
 # Set-up environment
 mingw32 PLATFORM = PLATFORM_DESKTOP on cmd
