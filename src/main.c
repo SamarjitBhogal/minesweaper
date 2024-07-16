@@ -18,14 +18,18 @@ typedef struct cell {
     int j;
     bool containsMine;
     bool revealed;
+    bool flagged;
     int nearbyMines;
 } Cell;
 
 Cell grid[COLS][ROWS];
 
+Texture2D flagSprite;
+
 void CellDraw(Cell);
 bool IndexIsValid(int, int);
 void CellReveal(int, int);
+void CellFlag(int, int);
 int CellCountMines(int, int);
 
 int main() {
@@ -34,9 +38,7 @@ int main() {
 
     InitWindow(screenWidth, screenHeight, "raylib");
 
-    //--------------------------------------------------------------------------------------
-    SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
-    //--------------------------------------------------------------------------------------
+    flagSprite = LoadTexture("resources/flag.png");
 
     for (int i = 0; i < COLS; i++) {
         for (int j = 0; j < ROWS; j++) {
@@ -45,6 +47,7 @@ int main() {
                 .i = i, 
                 .j = j,
                 .containsMine = false,
+                .flagged = false,
                 .revealed = false,
                 .nearbyMines = -1
             };
@@ -81,6 +84,14 @@ int main() {
             if (IndexIsValid(indexI, indexJ)) {
                 CellReveal(indexI, indexJ);
             }
+        } else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+            Vector2 mPos = GetMousePosition();
+            int indexI = mPos.x / cellWidth;
+            int indexJ = mPos.y / cellHeight;
+
+            if (IndexIsValid(indexI, indexJ)) {
+                CellFlag(indexI, indexJ);
+            }
         }
 
         BeginDrawing();
@@ -110,8 +121,16 @@ void CellDraw(Cell cell) {
             DrawRectangle(cell.i * cellWidth, cell.j * cellHeight, cellWidth, cellHeight, RED);
         } else {
             DrawRectangle(cell.i * cellWidth, cell.j * cellHeight, cellWidth, cellHeight, LIGHTGRAY);
-            DrawText(TextFormat("%d", cell.nearbyMines), cell.i * cellWidth +6, cell.j * cellHeight +4, cellHeight - 8, DARKGRAY);
+            if (cell.nearbyMines > 0) {
+                DrawText(TextFormat("%d", cell.nearbyMines), cell.i * cellWidth + 12, cell.j * cellHeight + 4, cellHeight - 8, DARKGRAY);
+            }            
         }
+    } else if (cell.flagged) {
+        Rectangle source = {0, 0, flagSprite.width, flagSprite.height};
+        Rectangle dest = {cell.i * cellWidth, cell.j * cellHeight, cellWidth, cellHeight};
+        Vector2 origin = {0,0};
+
+        DrawTexturePro(flagSprite, source, dest, origin, 0.0f, Fade(WHITE, 0.3f));
     }
 
     DrawRectangleLines(cell.i * cellWidth, cell.j * cellHeight, cellWidth, cellHeight, BLACK);
@@ -122,6 +141,10 @@ bool IndexIsValid(int i, int j) {
 }
 
 void CellReveal(int i, int j) {
+    if (grid[i][j].flagged) {
+        return;
+    }
+
     grid[i][j].revealed = true;
 
     if (grid[i][j].containsMine) {
@@ -129,6 +152,14 @@ void CellReveal(int i, int j) {
     } else {
         //play sound
     }
+}
+
+void CellFlag(int i, int j) {
+    if (grid[i][j].revealed) {
+        return;
+    }
+
+    grid[i][j].flagged = !grid[i][j].flagged;
 }
 
 int CellCountMines(int i, int j) {
