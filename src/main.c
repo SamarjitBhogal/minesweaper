@@ -26,11 +26,13 @@ Cell grid[COLS][ROWS];
 
 Texture2D flagSprite;
 
-void CellDraw(Cell);
+int CellCountMines(int, int);
 bool IndexIsValid(int, int);
+void GridInit();
+void CellDraw(Cell);
 void CellReveal(int, int);
 void CellFlag(int, int);
-int CellCountMines(int, int);
+void FloodClearFrom(int, int);
 
 int main() {
 
@@ -40,38 +42,7 @@ int main() {
 
     flagSprite = LoadTexture("resources/flag.png");
 
-    for (int i = 0; i < COLS; i++) {
-        for (int j = 0; j < ROWS; j++) {
-            //.i is named member initialization
-            grid[i][j] = (Cell) {
-                .i = i, 
-                .j = j,
-                .containsMine = false,
-                .flagged = false,
-                .revealed = false,
-                .nearbyMines = -1
-            };
-        }
-    }
-
-    int minesToPlace = (int) (ROWS * COLS * 0.1f);
-    while (minesToPlace > 0) {
-        int i = rand() % COLS;
-        int j = rand() % ROWS;
-
-        if (!grid[i][j].containsMine) {
-            grid[i][j].containsMine = true;
-            minesToPlace--;
-        }
-    }
-
-    for (int i = 0; i < COLS; i++) {
-        for (int j = 0; j < ROWS; j++) {
-            if (!grid[i][j].containsMine) {
-                grid[i][j].nearbyMines = CellCountMines(i, j);
-            }           
-        }
-    }
+    GridInit();
 
     // Main game loop
     while (!WindowShouldClose()) {
@@ -107,12 +78,44 @@ int main() {
         EndDrawing();
     }
 
-    // De-Initialization
-    //--------------------------------------------------------------------------------------
-    CloseWindow();                  // Close window and OpenGL context
-    //--------------------------------------------------------------------------------------
+    CloseWindow();
 
     return 0;
+}
+
+void GridInit() {
+    for (int i = 0; i < COLS; i++) {
+        for (int j = 0; j < ROWS; j++) {
+            //.i is named member initialization
+            grid[i][j] = (Cell) {
+                .i = i, 
+                .j = j,
+                .containsMine = false,
+                .flagged = false,
+                .revealed = false,
+                .nearbyMines = -1
+            };
+        }
+    }
+
+    int minesToPlace = (int) (ROWS * COLS * 0.1f);
+    while (minesToPlace > 0) {
+        int i = rand() % COLS;
+        int j = rand() % ROWS;
+
+        if (!grid[i][j].containsMine) {
+            grid[i][j].containsMine = true;
+            minesToPlace--;
+        }
+    }
+
+    for (int i = 0; i < COLS; i++) {
+        for (int j = 0; j < ROWS; j++) {
+            if (!grid[i][j].containsMine) {
+                grid[i][j].nearbyMines = CellCountMines(i, j);
+            }           
+        }
+    }
 }
 
 void CellDraw(Cell cell) {
@@ -130,7 +133,7 @@ void CellDraw(Cell cell) {
         Rectangle dest = {cell.i * cellWidth, cell.j * cellHeight, cellWidth, cellHeight};
         Vector2 origin = {0,0};
 
-        DrawTexturePro(flagSprite, source, dest, origin, 0.0f, Fade(WHITE, 0.3f));
+        DrawTexturePro(flagSprite, source, dest, origin, 0.0f, Fade(WHITE, 0.5f));
     }
 
     DrawRectangleLines(cell.i * cellWidth, cell.j * cellHeight, cellWidth, cellHeight, BLACK);
@@ -150,7 +153,9 @@ void CellReveal(int i, int j) {
     if (grid[i][j].containsMine) {
         ///lose
     } else {
-        //play sound
+        if (grid[i][j].nearbyMines == 0) {
+            FloodClearFrom(i, j);
+        }
     }
 }
 
@@ -180,4 +185,20 @@ int CellCountMines(int i, int j) {
     }
 
     return count;
+}
+
+void FloodClearFrom(int i, int j) {
+    for (int iOff =-1; iOff <= 1; iOff++) {
+        for (int jOff =-1; jOff <= 1; jOff++) {
+            if (iOff == 0 && jOff == 0) {
+                continue;
+            }
+            if (!IndexIsValid(i + iOff, j + jOff)) {
+               continue;
+            } 
+            if (!grid[i + iOff][j + jOff].revealed) {
+                CellReveal(i + iOff, j + jOff);
+            }
+        }
+    }
 }
