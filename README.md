@@ -1,5 +1,5 @@
 # MineSweeper
-Game prototype using C library raylib.
+Game prototype using the C library Raylib.
 
 # Set-up environment
 mingw32 PLATFORM = PLATFORM_DESKTOP on cmd
